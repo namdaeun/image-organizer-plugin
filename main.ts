@@ -1,20 +1,20 @@
 import { Notice, Plugin, TAbstractFile, TFile } from "obsidian";
 
-interface AssetOrganizer {
-	folder: string;
+interface ImagesOrganizer {
+	folderName: string;
 }
 
-const DEFAULT_SETTINGS: AssetOrganizer = {
-	folder: "_images",
+const DEFAULT_SETTINGS: ImagesOrganizer = {
+	folderName: "_images",
 };
 
 export default class AssetOrganizerPlugin extends Plugin {
-	settings: AssetOrganizer;
+	settings: ImagesOrganizer;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.organizeExistingAssets();
+		this.organizeExistingImages();
 
 		this.registerEvent(
 			this.app.vault.on("create", (file) => {
@@ -28,15 +28,15 @@ export default class AssetOrganizerPlugin extends Plugin {
 		return IMAGE_EXTENSIONS.test(file.name);
 	}
 
-	async organizeExistingAssets() {
+	async organizeExistingImages() {
 		const files = this.app.vault.getFiles();
 
 		for (const file of files) {
 			if (!this.isImage(file)) continue;
 
-			await this.moveFileToAssetsFolder(file);
+			await this.moveFileToImagesFolder(file);
 		}
-		new Notice("Existing assets organized");
+		new Notice("Existing images organized");
 	}
 
 	async handleFileCreate(file: TAbstractFile) {
@@ -44,16 +44,16 @@ export default class AssetOrganizerPlugin extends Plugin {
 
 		if (!this.isImage(file)) return;
 
-		await this.moveFileToAssetsFolder(file);
+		await this.moveFileToImagesFolder(file);
 	}
 
-	async moveFileToAssetsFolder(file: TFile) {
-		const assetsFolder = this.settings.folder;
-		if (!assetsFolder) return;
+	async moveFileToImagesFolder(file: TFile) {
+		const imagesFolder = this.settings.folderName;
+		if (!imagesFolder) return;
 
-		await this.app.vault.createFolder(assetsFolder).catch(() => {});
+		await this.app.vault.createFolder(imagesFolder).catch(() => {});
 
-		const newPath = `${assetsFolder}/${file.name}`;
+		const newPath = `${imagesFolder}/${file.name}`;
 
 		await this.app.fileManager.renameFile(file, newPath);
 		new Notice(`Image moved to ${newPath}`);
