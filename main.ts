@@ -1,11 +1,13 @@
-import { Notice, Plugin, TAbstractFile, TFile } from "obsidian";
+import { Modal, Notice, Plugin, TAbstractFile, TFile } from "obsidian";
 
 interface ImagesOrganizer {
 	folderName: string;
+	hasOrganizedExisting: boolean;
 }
 
 const DEFAULT_SETTINGS: ImagesOrganizer = {
 	folderName: "_images",
+	hasOrganizedExisting: false,
 };
 
 export default class ImagesOrganizerPlugin extends Plugin {
@@ -14,7 +16,17 @@ export default class ImagesOrganizerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.organizeExistingImages();
+		if (!this.settings.hasOrganizedExisting) {
+			const modal = new ConfirmModal(this.app);
+			modal.onConfirm = async () => {
+				await this.organizeExistingImages();
+				this.settings.hasOrganizedExisting = true;
+				await this.saveSettings();
+			};
+			modal.open();
+			this.settings.hasOrganizedExisting = true;
+			await this.saveSettings();
+		}
 
 		this.registerEvent(
 			this.app.vault.on("create", (file) => {
@@ -30,13 +42,21 @@ export default class ImagesOrganizerPlugin extends Plugin {
 
 	async organizeExistingImages() {
 		const files = this.app.vault.getFiles();
+		let count = 0;
 
 		for (const file of files) {
 			if (!this.isImage(file)) continue;
+			if (file.parent?.path === this.settings.folderName) continue;
 
 			await this.moveFileToImagesFolder(file);
+			count++;
 		}
-		new Notice("Existing images organized");
+
+		if (count > 0) {
+			new Notice(`${count}개의 이미지를 정리했습니다.`);
+		} else {
+			new Notice("이미지가 없습니다.");
+		}
 	}
 
 	async handleFileCreate(file: TAbstractFile) {
@@ -86,5 +106,36 @@ export default class ImagesOrganizerPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+}
+
+class ConfirmModal extends Modal {
+	onConfirm: () => void;
+
+	onOpen() {
+		this.modalEl.addClass("image-organizer-modal");
+		const { contentEl } = this;
+		contentEl.createEl("p", {
+			text: "기존 이미지들을 _images 폴더로 정리하시겠습니까?",
+		});
+
+		const btnContainer = contentEl.createDiv({
+			cls: "modal-button-container",
+		});
+
+		btnContainer
+			.createEl("button", { text: "예", cls: "mod-cta" })
+			.addEventListener("click", () => {
+				this.close();
+				this.onConfirm();
+			});
+
+		btnContainer
+			.createEl("button", { text: "아니오" })
+			.addEventListener("click", () => this.close());
+	}
+
+	onClose() {
+		this.contentEl.empty();
 	}
 }
