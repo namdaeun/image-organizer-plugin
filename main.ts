@@ -41,19 +41,36 @@ export default class ImagesOrganizerPlugin extends Plugin {
 
 	async handleFileCreate(file: TAbstractFile) {
 		if (!(file instanceof TFile)) return;
-
 		if (!this.isImage(file)) return;
 
 		await this.moveFileToImagesFolder(file);
 	}
 
+	generateUniqueFileName(folder: string, fileName: string) {
+		const index = fileName.lastIndexOf(".");
+		const baseName = fileName.substring(0, index);
+		const extension = fileName.substring(index);
+
+		let updatedFileName = fileName;
+		let counter = 1;
+
+		while (
+			this.app.vault.getAbstractFileByPath(`${folder}/${updatedFileName}`)
+		) {
+			updatedFileName = `${baseName}-${counter}${extension}`;
+			counter++;
+		}
+		return `${folder}/${updatedFileName}`;
+	}
+
 	async moveFileToImagesFolder(file: TFile) {
-		const imagesFolder = this.settings.folderName;
-		if (!imagesFolder) return;
+		const folder = this.settings.folderName;
+		if (!folder) return;
+		if (file.parent?.path === folder) return;
 
-		await this.app.vault.createFolder(imagesFolder).catch(() => {});
+		await this.app.vault.createFolder(folder).catch(() => {});
 
-		const newPath = `${imagesFolder}/${file.name}`;
+		const newPath = this.generateUniqueFileName(folder, file.name);
 
 		await this.app.fileManager.renameFile(file, newPath);
 		new Notice(`Image moved to ${newPath}`);
