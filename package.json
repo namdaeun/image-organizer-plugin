@@ -1,6 +1,6 @@
 {
 	"name": "Image Organizer Plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Automatically organizes images into a structured folder, keeping your vault clean and tidy.",
 	"main": "main.js",
 	"scripts": {

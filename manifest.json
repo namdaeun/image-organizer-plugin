@@ -1,7 +1,7 @@
 {
 	"id": "image-organizer-plugin",
 	"name": "Image Organizer Plugin",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
 	"description": "Automatically organizes images into a structured folder.",
 	"author": "namdaeun",
